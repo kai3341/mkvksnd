@@ -45,92 +45,46 @@ function argparse {
 	done
 }
 
-function Msg {
-	MSGFILES="$(ls -1|grep -i ^msg)"
-	MSGFILE="$(ls -1|grep -i ^msg|head -n1)"
-	[ -z "$MSGFILES" ] && (echo "Error: file \"msg\" not found." && printhelp)
-	MSGFILEWAV="$(ls -1|grep -i ^msg|grep -i wav|head -n1)"
-	MSGFILEMP3="$(ls -1|grep -i ^msg|grep -i mp3|head -n1)"
-	if [ -z "$MSGFILEWAV" ]
-	then
-		ffmpeg -i "$MSGFILE" msg.wav
-		BASE64MSGWAV="$(base64 msg.wav|tr -d '\n')"
-	else
-		BASE64MSGWAV="$(base64 "$MSGFILEWAV"|tr -d '\n')"
-	fi
-
-	if [ -z "$MSGFILEMP3" ]
-	then
-		ffmpeg -i "$MSGFILE" msg.mp3
-		BASE64MSGMP3="$(base64 msg.mp3|tr -d '\n')"
-	else
-		BASE64MSGMP3="$(base64 "$MSGFILEMP3"|tr -d '\n')"
-	fi
-}
-
-function New {
-	NEWFILES="$(ls -1|grep -i ^new)"
-	NEWFILE="$(ls -1|grep -i ^new|head -n1)"
-	[ -z "$NEWFILES" ] && (echo "Error: file \"new\" not found." && printhelp)
-	NEWFILEWAV="$(ls -1|grep -i ^new|grep -i wav|head -n1)"
-	NEWFILEMP3="$(ls -1|grep -i ^new|grep -i mp3|head -n1)"
-	if [ -z "$NEWFILEWAV" ]
-	then
-		ffmpeg -i "$NEWFILE" new.wav
-		BASE64NEWWAV="$(base64 new.wav|tr -d '\n')"
-	else
-		BASE64NEWWAV="$(base64 "$NEWFILEWAV"|tr -d '\n')"
-	fi
-
-	if [ -z "$NEWFILEMP3" ]
-	then
-		ffmpeg -i "$NEWFILE" new.mp3
-		BASE64NEWMP3="$(base64 new.mp3|tr -d '\n')"
-	else
-		BASE64NEWMP3="$(base64 "$NEWFILEMP3"|tr -d '\n')"
-	fi
-}
-
-function On {
-	ONFILES="$(ls -1|grep -i ^on)"
-	ONFILE="$(ls -1|grep -i ^on|head -n1)"
-	[ -z "$ONFILES" ] && (echo "Error: file \"on\" not found." && printhelp)
-	ONFILEWAV="$(ls -1|grep -i ^on|grep -i wav|head -n1)"
-	ONFILEMP3="$(ls -1|grep -i ^on|grep -i mp3|head -n1)"
-	if [ -z "$ONFILEWAV" ]
-	then
-		ffmpeg -i "$ONFILE" on.wav
-		BASE64ONWAV="$(base64 on.wav|tr -d '\n')"
-	else
-		BASE64ONWAV="$(base64 "$ONFILEWAV"|tr -d '\n')"
-	fi
-
-	if [ -z "$ONFILEMP3" ]
-	then
-		ffmpeg -i "$ONFILE" on.mp3
-		BASE64ONMP3="$(base64 on.mp3|tr -d '\n')"
-	else
-		BASE64ONMP3="$(base64 "$ONFILEMP3"|tr -d '\n')"
-	fi
+function CalcBASE64 {
+	i=1
+	for FORMAT in wav mp3
+	do
+		for FILE in msg new on
+		do
+			FILECURRENTFORMAT="$(ls -1|grep -i ^"$FILE"|grep -i "$FORMAT"|head -n1)"
+			if [ -n "$FILECURRENTFORMAT" ]
+			then
+				BASE64["$i"]="$(base64 "$FILECURRENTFORMAT"|tr -d '\n')"
+			else
+				ffmpeg -i "$FILE" "$CURRENTFILE"."$FORMAT"
+				BASE64["$i"]="$(base64 "$CURRENTFILE"."$FORMAT"|tr -d '\n')"
+			fi
+			((i++))
+		done
+	done
 }
 
 function CreateVKSND {
-echo '{' > "$OUTPUTFILE"
-echo "Name:'noname'," >> "$OUTPUTFILE"
-echo "  On:'data:audio/wav;base64,""$BASE64ONWAV""'," >> "$OUTPUTFILE"
-echo "  New:'data:audio/wav;base64,""$BASE64NEWWAV""'," >> "$OUTPUTFILE"
-echo "  Msg:'data:audio/wav;base64,""$BASE64MSGWAV""'," >> "$OUTPUTFILE"
-echo "  On_mp3:'data:audio/wav;base64,""$BASE64ONMP3""'," >> "$OUTPUTFILE"
-echo "  New_mp3:'data:audio/wav;base64,""$BASE64NEWMP3""'," >> "$OUTPUTFILE"
-echo "  Msg_mp3:'data:audio/wav;base64,""$BASE64MSGMP3""'" >> "$OUTPUTFILE"
-echo '}' >> "$OUTPUTFILE"
+	i=1
+	j=1
+	FORMAT=([1]="wav" [2]="mp3")
+	SECTION=([1]="" [2]="_mp3")
+	printf "{\nName:'noname'" > "$OUTPUTFILE"
+	while ((j<=2))
+	do
+		for SUBSECTION in On New Msg
+		do
+			printf ",\n  ""$SUBSECTION""${SECTION["$j"]}"":'data:audio/""${FORMAT["$j"]}"";base64,""${BASE64["$i"]}""'" >> "$OUTPUTFILE"
+			((i++))
+		done
+		((j++))
+	done
+	printf '\n}' >> "$OUTPUTFILE"
 }
 
 depcheck
 argparse
 argcheck
 cd "$DIRPATH"
-Msg
-New
-On
+CalcBASE64
 CreateVKSND
