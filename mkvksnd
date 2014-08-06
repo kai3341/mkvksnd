@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#TODO: ffmpeg package dependensy
+#https://github.com/kai3341/mkvksnd
 
 function printhelp {
 	echo "USAGE: $(basename $0) -d /path/to/directory -o /out/file/name.vksnd"
