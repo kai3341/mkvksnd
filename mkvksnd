@@ -74,7 +74,7 @@ function CreateVKSND {
 	printf "{\nName:'noname'" > "$OUTPUTFILE"
 	while ((j<=2))
 	do
-		for SUBSECTION in On New Msg
+		for SUBSECTION in Msg New On
 		do
 			printf ",\n  ""$SUBSECTION""${SECTION["$j"]}"":'data:audio/""${FORMAT["$j"]}"";base64,""${BASE64["$i"]}""'" >> "$OUTPUTFILE"
 			((i++))
