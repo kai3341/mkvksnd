@@ -2,6 +2,14 @@
 
 #https://github.com/kai3341/mkvksnd
 
+function depcheck {
+	for DEP in ffmpeg base64
+	do
+		[ -z "$(which "$DEP")" ] && (echo "Error: $DEP not found. Please install $DEP and try again." && FAIL="1")
+	done
+	[ -n "$FAIL" ] && exit 1
+}
+
 function printhelp {
 	echo "USAGE: $(basename $0) -d /path/to/directory -o /out/file/name.vksnd"
 	echo "Default directory './'; default outputfile 'out.vksnd'"
@@ -118,7 +126,7 @@ echo "  Msg_mp3:'data:audio/wav;base64,""$BASE64MSGMP3""'" >> "$OUTPUTFILE"
 echo '}' >> "$OUTPUTFILE"
 }
 
-[ -z "$(which ffmpeg)" ] && (echo "Error: ffmpeg not found. Please install ffmpeg and try again." && exit 1)
+depcheck
 argparse
 argcheck
 cd "$DIRPATH"
