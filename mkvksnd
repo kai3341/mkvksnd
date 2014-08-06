@@ -56,8 +56,10 @@ function CalcBASE64 {
 			then
 				BASE64["$i"]="$(base64 "$FILECURRENTFORMAT"|tr -d '\n')"
 			else
-				ffmpeg -i "$FILE" "$CURRENTFILE"."$FORMAT"
-				BASE64["$i"]="$(base64 "$CURRENTFILE"."$FORMAT"|tr -d '\n')"
+				CURRENTFILE="$(ls -1|grep -i ^"$FILE"|head -n1)"
+				CURRENTFILENAME="$(echo $CURRENTFILE|sed 's/\..*$//g')"
+				ffmpeg -i "$CURRENTFILE" "$CURRENTFILENAME"".""$FORMAT"
+				BASE64["$i"]="$(base64 "$CURRENTFILENAME"."$FORMAT"|tr -d '\n')"
 			fi
 			((i++))
 		done
